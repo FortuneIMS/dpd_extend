@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<openerp>
+<data>
+
+<!-- DPD Weight Product -->
+	<record id="dpd_weight_product_tree" model="ir.ui.view">
+		<field name="name">dpd.weight.product.tree</field>
+		<field name="model">dpd.weight.product</field>
+		<field name="arch" type="xml">
+			<tree string="DPD Weight Product">
+				<field name="product_id"/>
+				<field name="min_weight"/>
+				<field name="max_weight"/>
+				<field name="amount" />
+				<field name="country" />
+			</tree>
+		</field>
+	</record>
+	<record id="dpd_weight_product_form" model="ir.ui.view">
+		<field name="name">dpd.weight.product.form</field>
+		<field name="model">dpd.weight.product</field>
+		<field name="arch" type="xml">
+			<form string="DPD Weight Product" version="7.0">
+				<sheet>
+					<group>
+						<field name="product_id"/>
+						<field name="country" />
+						<field name="amount" />
+					</group>
+					<group col="4">
+						<field name="min_weight"/>
+						<field name="max_weight"/>
+					</group>
+				</sheet>
+			</form>
+		</field>
+	</record>
+
+	<record id="dpd_weight_product_act" model="ir.actions.act_window">
+		<field name="name">DPD Weight Product</field>
+		<field name="res_model">dpd.weight.product</field>
+		<field name="view_type">form</field>
+		<field name="view_id" ref="dpd_weight_product_tree"/>
+		<field name="help" type="html">
+			<p class="oe_view_nocontent_create">
+				Click to add new DPD weight product.
+			</p>
+		</field>
+	</record>
+	<menuitem id="dpd_weight_product_menu" action="dpd_weight_product_act" 
+		parent="dpd.dpd_shipping_menu_main" sequence="20"/>
+
+<!-- PARTNER VIEW INHERITED -->
+	<record id="view_partner_form_mb_extend" model="ir.ui.view">
+		<field name="name">res.partner.form.mb.extend</field>
+		<field name="model">res.partner</field>
+		<field ref="base.view_partner_form" name="inherit_id"/>
+		<field name="arch" type="xml">
+			<xpath expr="//notebook/page[@string='Sales &amp; Purchases']//group/field[@name='active']" position="before">
+				<field name="shipping_customer" />
+			</xpath>
+		</field>
+	</record>
+
+	<record id="view_res_partner_filter_ext" model="ir.ui.view">
+		<field name="name">res.partner.select.ext</field>
+		<field name="model">res.partner</field>
+		<field name="inherit_id" ref="base.view_res_partner_filter"/>
+		<field name="arch" type="xml">
+			<xpath expr="//filter[@name='customer']" position="after">
+				<filter string="Shipping Customer" name="shipping_customer" 
+					domain="[('shipping_customer','=',1)]" help="Shipping Customer"/>
+			</xpath>
+		</field>
+	</record>
+
+<!-- DPD SHIPPING VIEW INHERITED -->
+	<record id="view_dpd_shipping_form_mb_extend" model="ir.ui.view">
+		<field name="name">dpd.shipping.mb.extend</field>
+		<field name="model">dpd.shipping</field>
+		<field name="inherit_id" ref="dpd.view_dpd_shipping_form"/>
+		<field name="arch" type="xml">
+			<xpath expr="//group/field[@name='partner_id']" position="replace">
+				<field name="partner_id" required="1" on_change="onchange_partner_id(partner_id)" context="{'default_shipping_customer': True}"/>
+			</xpath>
+			<xpath expr="//label[@for='weight']" position="replace">
+			</xpath>
+			<xpath expr="//div[@class='weight_format']" position="replace">
+			</xpath>
+			<xpath expr="//group/field[@name='sender_name']" position="after">
+			    <field name="type" />
+				<field name="sending_with_us" class="oe_inline"/>
+			</xpath>
+			<xpath expr="//group/field[@name='tenant_id']" position="replace">
+				<field name="tenant_id" invisible="1"/>
+				<label for="weight" string="Total Weight"/>
+				<div class="weight_format">
+					<field name="weight" style="width: 40%%"/>
+					<button name="calc_weight" type="object" string="Calculate Weight" style="width: 25%%" invisible="1"/>
+					<button name="get_express_packing" type="object" string="Express Packing" style="width: 45%%" attrs="{'invisible':[('type','!=',True)]}"/>
+				</div>
+				<label for="weight_amount" string="Price"/>
+				<div class="weight_format">
+					<field name="weight_amount" string="Shipping Amount" style="width: 40%%"/>
+					<button name="calc_weight" type="object" string="Product Packing Calculate" style="width: 55%%" attrs="{'invisible':[('type','=',True)]}"/>
+				</div>
+				<field name="weight_product_id" invisible="1"/>
+			</xpath>
+			<xpath expr="//sheet/group" position="before">
+				<div class="oe_right oe_button_box">
+					<button name="print_via_gcp" type="object" string="Cloud Print" states="ready_to_ship,shipped,invoiced"/>
+				</div>
+			</xpath>
+			<xpath expr="//button[@string='Create Invoice']" position="replace">
+				<button name="%(dpd.act_create_shipping_invoice)d" states="shipped" type="action" string="Create Invoice" context="{'default_product_id': weight_product_id}"/>
+			</xpath>
+			<notebook position="inside">
+				<page string="Invoice(s)">
+					<field name="invoice_ids" nolabel="1"/>
+				</page>
+			</notebook>
+			<xpath expr="//group/field[@name='company_id']" position="after">
+				<field name="invoice_to"/>
+			</xpath>
+		</field>
+	</record>
+
+</data>
+</openerp>
