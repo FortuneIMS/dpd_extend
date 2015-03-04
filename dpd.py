@@ -29,10 +29,49 @@ class dpd_shipping(osv.osv):
         'invoice_to': fields.selection([('customer','Customer'),('sender','Sender')], 'Invoice To'),
         'type': fields.boolean('Is Express Packaging for DPD ?')
     }
-    _defaults = {'invoice_to': lambda *a: 'customer',
+    _defaults = {'invoice_to': lambda *a: 'sender',
                  'type':lambda *a:True
                  }
+    def get_user_signature(self, cr, uid, ids, context={}):
+        user_obj = self.pool.get('res.users').browse(cr,uid,uid)
+        res = []
+        if user_obj.signature:
+            res = user_obj.signature.split('\n')
+        return res
     
+    def action_send_tracking_id_mail(self, cr, uid, ids, context=None):
+        '''
+        This function opens a window to compose an email, with the edi sale template message loaded by default
+        '''
+        assert len(ids) == 1, 'This option should only be used for a single id at a time.'
+        ir_model_data = self.pool.get('ir.model.data')
+        try:
+            template_id = ir_model_data.get_object_reference(cr, uid, 'dpd', 'email_template_dpd_tracking_number')[1]
+        except ValueError:
+            template_id = False
+        try:
+            compose_form_id = ir_model_data.get_object_reference(cr, uid, 'mail', 'email_compose_message_wizard_form')[1]
+        except ValueError:
+            compose_form_id = False 
+        ctx = dict(context)
+        ctx.update({
+            'default_model': 'dpd.shipping',
+            'default_res_id': ids[0],
+            'default_use_template': bool(template_id),
+            'default_template_id': template_id,
+            'default_composition_mode': 'comment',
+        })
+        return {
+            'type': 'ir.actions.act_window',
+            'view_type': 'form',
+            'view_mode': 'form',
+            'res_model': 'mail.compose.message',
+            'views': [(compose_form_id, 'form')],
+            'view_id': compose_form_id,
+            'target': 'new',
+            'context': ctx,
+        }
+        
     def calc_weight(self, cr, uid, ids, context=None):
         uom_obj = self.pool.get('product.uom')
         for shipping in self.browse(cr, uid, ids, context=context):
@@ -91,8 +130,12 @@ class dpd_shipping(osv.osv):
                 sender_name = company.name + '/' + sender.name
             else:
                 sender_name = sender.name
+        else:
+            sender_name = sender.name
             vals.update({'sender_name': sender_name})
-        return super(dpd_shipping, self).create(cr, uid, vals, context)
+        id_c = super(dpd_shipping, self).create(cr, uid, vals, context)
+        self.write(cr, uid, [id_c], {'sending_with_us':vals.get('sending_with_us',False)})
+        return id_c
 
     def write(self, cr, uid, ids, vals, context=None):
         if context is None: context = {}
@@ -243,9 +286,10 @@ class create_shipping_invoice(osv.osv_memory):
                     line_account_id = product.categ_id.property_account_income_categ.id
                 else:
                     raise osv.except_osv(('Validation Error!'),("Invoice cannot validate because neither product nor product category property account income configured for product '%s'!"%(product.name)))
+            tracking_no = dpd_shipping.tracking_number[3:]
             invoice_line_vals = {
-                'name': 'Recipient: %s\nTracking Number: %s'%(
-                          dpd_shipping.partner_id.name,dpd_shipping.tracking_number),
+                'name': 'Recipient: %s\nPackaging Number: %s\nWeight: %s'%(
+                          dpd_shipping.partner_id.name,tracking_no,dpd_shipping.weight),
                 'invoice_id': invoice_id,
                 'uos_id': uos_id and uos_id.id or None,
                 'product_id': product.id,

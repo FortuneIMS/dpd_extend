@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+<data>
+
+	<record id="contract_xls_report_form" model="ir.ui.view">
+		<field name="name">contract.xls.report.form</field>
+		<field name="model">contract.xls.report</field>
+		<field name="type">form</field>
+		<field name="arch" type="xml">
+			<form string="Contract XLS Report" version="7.0">
+				<group colspan="4">
+					<field name="company_id"/>
+					<field name="state" invisible="1"/>
+				</group>
+				<group states="get">
+					<separator string="Report is ready, please download it..." colspan="4"/>
+					<field name="name" invisible="1" colspan="4"/>
+					<field name="data" nolabel="1" readonly="1" filename="name" colspan="4"/>
+					<field height="40" name="advice" nolabel="1" colspan="4"/>
+				</group>
+				<div>
+					<button icon="gtk-cancel" name="act_cancel" special="cancel" states="choose" string="_Close" type="object" class="oe_inline"/>
+					<button icon="gtk-close" name="act_destroy" special="cancel" string="_Close" states="get" type="object" class="oe_inline"/>
+					<button icon="gtk-find" name="print_reset" string="Reset" type="object" states="get" class="oe_inline"/>
+					<button icon="gtk-print" name="print_xlsx_report" invisible="1" string="Print Standard" type="object" states="choose" default_focus="1" class="oe_inline"/>
+					<button icon="gtk-print" name="print_xlsxwriter_report" string="Print Standard" type="object" states="choose" default_focus="1" class="oe_inline"/>
+				</div>
+			</form>
+		</field>
+	</record>
+
+	<record id="action_contract_xls_report" model="ir.actions.act_window">
+		<field name="name">Contract Report(XLS)</field>
+		<field name="res_model">contract.xls.report</field>
+		<field name="type">ir.actions.act_window</field>
+		<field name="view_type">form</field>
+		<field name="view_mode">form</field>
+		<field name="view_id" ref="contract_xls_report_form"/>
+		<field name="target">current</field>
+	</record>
+
+	<menuitem id="menu_contract_xls_report_menu" 
+		action="action_contract_xls_report" 
+		parent="mybox_erp.menu_mybox_report"
+		sequence="120"/>
+
+</data>
+</openerp>

@@ -109,6 +109,7 @@
 			<xpath expr="//sheet/group" position="before">
 				<div class="oe_right oe_button_box">
 					<button name="print_via_gcp" type="object" string="Cloud Print" states="ready_to_ship,shipped,invoiced"/>
+					<button name="action_send_tracking_id_mail" string="Resend Tracking Mail" type="object"/>
 				</div>
 			</xpath>
 			<xpath expr="//button[@string='Create Invoice']" position="replace">
