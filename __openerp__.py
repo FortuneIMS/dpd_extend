@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 {
-    'name': 'Mybox Erp Extend',
+    'name': 'DPD Extend',
     'category': 'Customized',
     'version': '1.0',
-    'description': 'Mybox ERP module extends',
+    'description': 'DPD module extends',
     'depends': ["base","dpd","google_cloud_printing"],
     "init_xml": [],
     "update_xml": [ 
