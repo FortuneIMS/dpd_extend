@@ -3,7 +3,7 @@
 #
 #    OpenERP, Open Source Management Solution
 #    Copyright (c) 2012-2013 2Vive. All Rights Reserved.
-#    Author: Sanket M0odi <sanket.msc9@gmail.com>
+#    Author: Fortuneims <info@fortuneims.com>
 #
 ##############################################################################
 
@@ -113,6 +113,7 @@ class contract_xls_report(osv.osv_memory):
 
         row += 1
 
+        today = time.strftime('%Y-%m-%d')
         summary_query = """
 SELECT 
     so.name,
@@ -128,15 +129,18 @@ SELECT
     prod.surface_m2
 FROM
     sale_order_line as sol
-INNER JOIN sale_order as so on so.id=sol.order_id
-INNER JOIN res_partner as p on p.id=so.partner_id
-INNER JOIN product_product as prod on prod.id=sol.product_id
-INNER JOIN product_template as pt on pt.id=prod.product_tmpl_id
+LEFT JOIN sale_order as so on so.id=sol.order_id
+LEFT JOIN res_partner as p on p.id=so.partner_id
+LEFT JOIN product_product as prod on prod.id=sol.product_id
+LEFT JOIN product_template as pt on pt.id=prod.product_tmpl_id
 WHERE 
     so.contract_order=True AND
     prod.rent_categ=True AND 
     prod.is_cubix=False AND
-    so.company_id=%s
+    (prod.is_cubix=False OR prod.is_cubix is null) AND
+    so.company_id=%s AND
+    so.state IN ('progress','manual', 'invoice_except') AND
+    (so.move_out <= '%s' OR so.move_out IS NULL)
 GROUP BY
     prod.default_code,
     prod.surface_m2,
@@ -153,7 +157,7 @@ ORDER BY
     so.move_in,
     so.date,
     so.name
-        """%(this.company_id.id)
+        """%(this.company_id.id,today)
 
         cr.execute(summary_query)
         result = cr.fetchall()
@@ -244,7 +248,7 @@ ORDER BY
         col=1
         worksheet.write(row, col, 'Vacant Area', data_left)
         col=2
-        worksheet.write_formula(row, col, '=ROUND(C%s-C%s,5)'%(row-1,row), data_right)
+        worksheet.write_formula(row, col, '=ROUND(C%s-C%s,5)'%(row,row-1), data_right)
         ########### FIRST TABLE END ########
 
 
